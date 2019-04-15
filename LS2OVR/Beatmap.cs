@@ -53,6 +53,7 @@ namespace LS2OVR
 
 		public Metadata BeatmapMetadata {get; set;}
 		public List<BeatmapData> BeatmapList {get; set;}
+		public Dictionary<String, Byte[]> FileDatabase {get; set;}
 
 		/// <summary>
 		/// Create new Beatmap object by reading LS2OVR beatmap.
@@ -175,6 +176,37 @@ namespace LS2OVR
 			}
 
 			// Read beatmap data
+			using (BinaryReader beatmapDataReader = new BinaryReader(beatmapData))
+			{
+				Byte beatmapDataCount = beatmapDataReader.ReadByte();
+
+				for (Byte i = 0; i < beatmapDataCount; i++)
+				{
+					Int32 eachBeatmapDataSize = IPAddress.NetworkToHostOrder(beatmapDataReader.ReadInt32());
+					if (eachBeatmapDataSize <= 0)
+						throw new InvalidBeatmapFileException("beatmap data has invalid size");
+
+					Byte[] beatmapDataBuffer = beatmapDataReader.ReadBytes(eachBeatmapDataSize);
+					Byte[] beatmapDataMD5Hash = beatmapDataReader.ReadBytes(16);
+
+					if (Util.MD5HashEqual(beatmapDataBuffer, beatmapDataMD5Hash))
+					{
+						try
+						{
+							NbtFile beatmapRoot = new NbtFile();
+							beatmapRoot.LoadFromBuffer(beatmapDataBuffer, 0, eachBeatmapDataSize, NbtCompression.None);
+							BeatmapData beatmapDataObject = new BeatmapData(beatmapRoot.RootTag);
+							BeatmapList.Add(beatmapDataObject);
+						}
+						catch (EndOfStreamException) {}
+						catch (InvalidDataException) {}
+						catch (NbtFormatException) {}
+						catch (InvalidCastException) {}
+					}
+				}
+			}
+
+			// TODO: Additional file reading.
 		}
 	};
 }

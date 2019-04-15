@@ -37,6 +37,8 @@ namespace LS2OVR
 		/// </summary>
 		/// <param name="position">Unit position in range 1-9 where 1 is rightmost and 9 is leftmost.</param>
 		/// <param name="filename">Custom unit filename.</param>
+		/// <exception cref="System.ArgumentOutOfRangeException">Thrown if <paramref name="position"/> is out of range.</exception>
+		/// <exception cref="System.ArgumentNullException">Thrown if <paramref name="filename"/> is null.</exception>
 		public CustomUnitInfo(Byte position, String filename)
 		{
 			if (position <= 0 || position > 9)
@@ -50,22 +52,16 @@ namespace LS2OVR
 		/// Create new CustomUnitInfo from NBT data.
 		/// </summary>
 		/// <param name="data">NBT compound data.</param>
+		/// <exception cref="System.InvalidCastException">Thrown if field(s) is missing or invalid.</exception>
+		/// <exception cref="System.InvalidOperationException">Thrown if "position" is out of range.</exception>
 		public CustomUnitInfo(NbtCompound data)
 		{
-			if (data.TryGet("position", out NbtByte position))
-			{
-				Position = position.ByteValue;
-				if (Position <= 0 || Position > 9)
-					// Cannot use ArgumentOutOfRange exception
-					throw new InvalidOperationException("\"position\" is out of range");
-			}
-			else
-				throw new InvalidOperationException("\"position\" field is invalid or missing");
+			Position = data.Get<NbtByte>("position").ByteValue;
+			if (Position <= 0 || Position > 9)
+				// Cannot use ArgumentOutOfRange exception
+				throw new InvalidOperationException("\"position\" is out of range");
 
-			if (data.TryGet("filename", out NbtString filename))
-				Filename = filename.StringValue;
-			else
-				throw new InvalidOperationException("\"filename\" field is invalid or missing");
+			Filename = data.Get<NbtString>("filename").StringValue;
 		}
 	}
 }

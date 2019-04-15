@@ -28,11 +28,11 @@ namespace LS2OVR
 		/// <summary>
 		/// Composer role.
 		/// </summary>
-		public String Role { get; set; }
+		public String Role {get; set;}
 		/// <summary>
 		/// Composer name.
 		/// </summary>
-		public String Name { get; set; }
+		public String Name {get; set;}
 
 		/// <summary>
 		/// Create new ComposerData object with specified role and name.
