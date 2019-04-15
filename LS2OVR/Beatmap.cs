@@ -24,7 +24,7 @@ using fNbt;
 
 namespace LS2OVR
 {
-	enum BeatmapCompressionType
+	public enum BeatmapCompressionType
 	{
 		None,
 		GZip,
@@ -40,7 +40,7 @@ namespace LS2OVR
 		/// <summary>
 		/// Specification versionthat this library target, in string.
 		/// </summary>
-		public const String TargetVersionString = "0.4";
+		public const String TargetVersionString = "0.5";
 		/// <summary>
 		/// Library version.
 		/// </summary>
@@ -104,11 +104,11 @@ namespace LS2OVR
 			metadataNBTFile.LoadFromBuffer(metadataNBT, 0, metadataSize, NbtCompression.None);
 			NbtCompound metadata = metadataNBTFile.RootTag;
 
-			// Read beatmap data
+			// Read beatmap data header
 			Byte beatmapDataCompressionType = reader.ReadByte();
 			Int32 beatmapDataCompressedSize = IPAddress.NetworkToHostOrder(reader.ReadInt32());
 			Int32 beatmapDataUncompressedSize = IPAddress.NetworkToHostOrder(reader.ReadInt32());
-			Byte[] beatmapData = null;
+			MemoryStream beatmapData = null;
 
 			switch (beatmapDataCompressionType)
 			{
@@ -117,7 +117,7 @@ namespace LS2OVR
 					if (beatmapDataCompressedSize != beatmapDataUncompressedSize)
 						throw new InvalidBeatmapFileException("uncompressed size mismatch");
 
-					beatmapData = reader.ReadBytes(beatmapDataCompressedSize);
+					beatmapData = new MemoryStream(reader.ReadBytes(beatmapDataCompressedSize));
 					break;
 				}
 				case (Byte) BeatmapCompressionType.GZip:
@@ -129,7 +129,8 @@ namespace LS2OVR
 						{
 							GZipStream compressedStream = new GZipStream(memoryStream, CompressionMode.Decompress);
 							compressedStream.CopyTo(decompressedData);
-							beatmapData = decompressedData.ToArray();
+							decompressedData.Seek(0, SeekOrigin.Begin);
+							beatmapData = decompressedData;
 						}
 						catch (InvalidDataException)
 						{
@@ -152,8 +153,8 @@ namespace LS2OVR
 						{
 							DeflateStream compressedStream = new DeflateStream(memoryStream, CompressionMode.Decompress);
 							compressedStream.CopyTo(decompressedData);
-							beatmapData = decompressedData.ToArray();
-
+							decompressedData.Seek(0, SeekOrigin.Begin);
+							beatmapData = decompressedData;
 						}
 						catch (InvalidDataException)
 						{
@@ -169,7 +170,7 @@ namespace LS2OVR
 				}
 			}
 
-
+			// Read beatmap data
 		}
 	};
 }

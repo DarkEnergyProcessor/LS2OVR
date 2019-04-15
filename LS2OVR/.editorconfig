@@ -1,0 +1,12 @@
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+
+[*.cs]
+# Don't use "var" - warning
+csharp_style_var_for_built_in_types = false:warning
+# Use object initializer and collection initializer
+dotnet_style_object_initializer = true:warning

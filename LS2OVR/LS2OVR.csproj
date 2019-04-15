@@ -5,7 +5,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="fNbt" Version="0.6.4" />
+    <ProjectReference Include="..\fNbt\fNbt.csproj" />
   </ItemGroup>
 
 </Project>
