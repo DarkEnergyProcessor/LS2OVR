@@ -1,3 +1,21 @@
+// Copyright(c) 2040 Dark Energy Processor
+// 
+// This software is provided 'as-is', without any express or implied
+// warranty.In no event will the authors be held liable for any damages
+// arising from the use of this software.
+// 
+// Permission is granted to anyone to use this software for any purpose,
+// including commercial applications, and to alter it and redistribute it
+// freely, subject to the following restrictions:
+// 
+// 1. The origin of this software must not be misrepresented; you must not
+//    claim that you wrote the original software.If you use this software
+//    in a product, an acknowledgment in the product documentation would be
+//    appreciated but is not required.
+// 2. Altered source versions must be plainly marked as such, and must not be
+//    misrepresented as being the original software.
+// 3. This notice may not be removed or altered from any source distribution.
+
 using System;
 using fNbt;
 
@@ -37,7 +55,7 @@ namespace LS2OVR
 		/// Create new BackgroundInfo with specified background number.
 		/// </summary>
 		/// <param name="number">Background number (must be greater than 0).</param>
-		/// <exception cref="System.ArgumentOutOfRangeException">Thrown if <paramref name="number"/> is 0 or negative.</exception>
+		/// <exception cref="ArgumentOutOfRangeException">Thrown if <paramref name="number"/> is 0 or negative.</exception>
 		public BackgroundInfo(Int32 number)
 		{
 			if (number <= 0)
@@ -56,8 +74,8 @@ namespace LS2OVR
 		/// <param name="r">Right background filename.</param>
 		/// <param name="t">Top background filename.</param>
 		/// <param name="b">Bottom background filename.</param>
-		/// <exception cref="System.ArgumentNullException">Thrown if <paramref name="main"/> is null.</exception>
-		/// <exception cref="System.FormatException">Thrown if <paramref name="main"/> is not correct number format.</exception>
+		/// <exception cref="ArgumentNullException">Thrown if <paramref name="main"/> is null.</exception>
+		/// <exception cref="FormatException">Thrown if <paramref name="main"/> is not correct number format.</exception>
 		public BackgroundInfo(String main, String l = null, String r = null, String t = null, String b = null)
 		{
 			if (main == null)
@@ -100,14 +118,14 @@ namespace LS2OVR
 		/// Create new BackgroundInfo based on NBT data.
 		/// </summary>
 		/// <param name="data">TAG_Compound NBT data.</param>
-		/// <exception cref="System.InvalidCastException">Thrown if "main" field in NBT is missing or invalid.</exception>
+		/// <exception cref="InvalidCastException">Thrown if "main" field in NBT is missing or invalid.</exception>
 		public BackgroundInfo(NbtCompound data)
 		{
 			NbtString temp1, temp2;
 			Main = data.Get<NbtString>("main").StringValue;
 			BackgroundNumber = 0;
 
-			if (data.TryGet<NbtString>("left", out temp1) && data.TryGet<NbtString>("right", out temp2))
+			if (data.TryGet("left", out temp1) && data.TryGet("right", out temp2))
 			{
 				Left = temp1.StringValue;
 				Right = temp2.StringValue;
@@ -116,7 +134,7 @@ namespace LS2OVR
 				Left = Right = null;
 
 
-			if (data.TryGet<NbtString>("top", out temp1) && data.TryGet<NbtString>("bottom", out temp2))
+			if (data.TryGet("top", out temp1) && data.TryGet("bottom", out temp2))
 			{
 				Top = temp1.StringValue;
 				Bottom = temp2.StringValue;

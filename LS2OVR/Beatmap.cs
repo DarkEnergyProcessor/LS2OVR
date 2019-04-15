@@ -17,6 +17,7 @@
 // 3. This notice may not be removed or altered from any source distribution.
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Net;
@@ -50,15 +51,18 @@ namespace LS2OVR
 		/// </summary>
 		public static readonly Byte[] Signature = {108, 105, 118, 101, 115, 105, 109, 51};
 
+		public Metadata BeatmapMetadata {get; set;}
+		public List<BeatmapData> BeatmapList {get; set;}
+
 		/// <summary>
 		/// Create new Beatmap object by reading LS2OVR beatmap.
 		/// </summary>
 		/// <param name="stream">Input beatmap stream</param>
-		/// <exception cref="System.ArgumentException">Thrown when the stream is unreadable.</exception>
-		/// <exception cref="System.ArgumentNullException">Thrown when stream is null.</exception>
-		/// <exception cref="System.IO.EndOfStreamException">Thrown when unexected end of stream occured.</exception>
-		/// <exception cref="System.IO.IOException">Thrown when I/O problems occured.</exception>
-		/// <exception cref="LS2OVR.InvalidBeatmapFileException">Thrown when file is invalid LS2OVR beatmap.</exception>
+		/// <exception cref="ArgumentException">Thrown when the stream is unreadable.</exception>
+		/// <exception cref="ArgumentNullException">Thrown when stream is null.</exception>
+		/// <exception cref="EndOfStreamException">Thrown when unexected end of stream occured.</exception>
+		/// <exception cref="IOException">Thrown when I/O problems occured.</exception>
+		/// <exception cref="InvalidBeatmapFileException">Thrown when file is invalid LS2OVR beatmap.</exception>
 		public Beatmap(Stream stream)
 		{
 			if (stream == null)
@@ -102,7 +106,7 @@ namespace LS2OVR
 			// Parse metadata
 			NbtFile metadataNBTFile = new NbtFile();
 			metadataNBTFile.LoadFromBuffer(metadataNBT, 0, metadataSize, NbtCompression.None);
-			NbtCompound metadata = metadataNBTFile.RootTag;
+			BeatmapMetadata = new Metadata(metadataNBTFile.RootTag);
 
 			// Read beatmap data header
 			Byte beatmapDataCompressionType = reader.ReadByte();

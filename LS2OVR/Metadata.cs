@@ -73,25 +73,25 @@ namespace LS2OVR
 			Title = data.Get<NbtString>("title").StringValue;
 			NbtString temp;
 
-			if (data.TryGet<NbtString>("artist", out temp))
+			if (data.TryGet("artist", out temp))
 				Artist = temp.StringValue;
 			else
 				Artist = null;
-			if (data.TryGet<NbtString>("source", out temp))
+			if (data.TryGet("source", out temp))
 				Source = temp.StringValue;
 			else
 				Source = null;
-			if (data.TryGet<NbtString>("audio", out temp))
+			if (data.TryGet("audio", out temp))
 				Audio = temp.StringValue;
 			else
 				Audio = null;
-			if (data.TryGet<NbtString>("artwork", out temp))
+			if (data.TryGet("artwork", out temp))
 				Artwork = temp.StringValue;
 			else
 				Artwork = null;
 
 			Composers = null;
-			if (data.TryGet<NbtList>("composers", out NbtList composersList))
+			if (data.TryGet("composers", out NbtList composersList))
 			{
 				List<ComposerData> composerDataList = new List<ComposerData>();
 				Boolean isOK = true;
@@ -99,7 +99,7 @@ namespace LS2OVR
 				foreach(NbtCompound composerData in composersList.ToArray<NbtCompound>()) 
 				{
 					NbtString tempRole, tempName;
-					if (composerData.TryGet<NbtString>("role", out tempRole) && composerData.TryGet<NbtString>("name", out tempName))
+					if (composerData.TryGet("role", out tempRole) && composerData.TryGet("name", out tempName))
 						composerDataList.Add(new ComposerData(tempRole.StringValue, tempName.StringValue));
 					else
 					{
@@ -112,7 +112,7 @@ namespace LS2OVR
 					Composers = composerDataList.ToArray();
 			}
 			
-			if (data.TryGet<NbtList>("tags", out NbtList tagData))
+			if (data.TryGet("tags", out NbtList tagData))
 			{
 				try
 				{
