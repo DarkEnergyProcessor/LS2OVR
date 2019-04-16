@@ -21,30 +21,32 @@ using System.Security.Cryptography;
 
 namespace LS2OVR
 {
-	class Util
+
+internal class Util
+{
+	public static Boolean ByteArrayEquals(Byte[] a, Byte[] b)
 	{
-		public static Boolean ByteArrayEquals(Byte[] a, Byte[] b)
+		if (a.Length == 0 || b.Length == 0)
+			return false;
+		if (a.Length != b.Length)
+			return false;
+
+		for (Int32 i = 0; i < a.Length; i++)
 		{
-			if (a.Length == 0 || b.Length == 0)
+			if (a[i].Equals(b[i]) == false)
 				return false;
-			if (a.Length != b.Length)
-				return false;
-
-			for (Int32 i = 0; i < a.Length; i++)
-			{
-				if (a[i].Equals(b[i]) == false)
-					return false;
-			}
-
-			return true;
 		}
 
-		public static Boolean MD5HashEqual(Byte[] data, Byte[] hash)
-		{
-			MD5 hasher = MD5.Create();
-			return ByteArrayEquals(hash, hasher.ComputeHash(data));
-		}
+		return true;
+	}
 
-		private Util() {}
-	};
+	public static Boolean MD5HashEqual(Byte[] data, Byte[] hash)
+	{
+		MD5 hasher = MD5.Create();
+		return ByteArrayEquals(hash, hasher.ComputeHash(data));
+	}
+
+	private Util() {}
+};
+
 }

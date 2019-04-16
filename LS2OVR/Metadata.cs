@@ -22,122 +22,124 @@ using fNbt;
 
 namespace LS2OVR
 {
+
+/// <summary>
+/// Structure which holds song metadata.
+/// </summary>
+public struct Metadata
+{
 	/// <summary>
-	/// Structure which holds song metadata.
+	/// Song name.
 	/// </summary>
-	public struct Metadata
+	public String Title {get; set;}
+	/// <summary>
+	/// Song artist.
+	/// </summary>
+	public String Artist {get; set;}
+	/// <summary>
+	/// Song source. Either anime name, album name, etc.
+	/// </summary>
+	public String Source {get; set;}
+	/// <summary>
+	/// List of composers data.
+	/// </summary>
+	public ComposerData[] Composers {get; set;}
+	/// <summary>
+	/// Audio file name.
+	/// </summary>
+	public String Audio {get; set;}
+	/// <summary>
+	/// Song artwork file name.
+	/// </summary>
+	public String Artwork {get; set;}
+	/// <summary>
+	/// List of song tags.
+	/// </summary>
+	public String[] Tags {get; set;}
+
+	/// <summary>
+	/// Create new Metadata with specified title and other data set to null
+	/// </summary>
+	/// <param name="t">Song title.</param>
+	public Metadata(String t)
 	{
-		/// <summary>
-		/// Song name.
-		/// </summary>
-		public String Title {get; set;}
-		/// <summary>
-		/// Song artist.
-		/// </summary>
-		public String Artist {get; set;}
-		/// <summary>
-		/// Song source. Either anime name, album name, etc.
-		/// </summary>
-		public String Source {get; set;}
-		/// <summary>
-		/// List of composers data.
-		/// </summary>
-		public ComposerData[] Composers {get; set;}
-		/// <summary>
-		/// Audio file name.
-		/// </summary>
-		public String Audio {get; set;}
-		/// <summary>
-		/// Song artwork file name.
-		/// </summary>
-		public String Artwork {get; set;}
-		/// <summary>
-		/// List of song tags.
-		/// </summary>
-		public String[] Tags {get; set;}
-
-		/// <summary>
-		/// Create new Metadata with specified title and other data set to null
-		/// </summary>
-		/// <param name="t">Song title.</param>
-		public Metadata(String t)
-		{
-			Title = t ?? throw new ArgumentNullException("t");
-			Artist = Source = Audio = Artwork = null;
-			Composers = null;
-			Tags = null;
-		}
-
-		public Metadata(NbtCompound data)
-		{
-			Title = data.Get<NbtString>("title").StringValue;
-			NbtString temp;
-
-			if (data.TryGet("artist", out temp))
-				Artist = temp.StringValue;
-			else
-				Artist = null;
-			if (data.TryGet("source", out temp))
-				Source = temp.StringValue;
-			else
-				Source = null;
-			if (data.TryGet("audio", out temp))
-				Audio = temp.StringValue;
-			else
-				Audio = null;
-			if (data.TryGet("artwork", out temp))
-				Artwork = temp.StringValue;
-			else
-				Artwork = null;
-
-			Composers = null;
-			if (data.TryGet("composers", out NbtList composersList))
-			{
-				List<ComposerData> composerDataList = new List<ComposerData>();
-				Boolean isOK = true;
-
-				foreach(NbtCompound composerData in composersList.ToArray<NbtCompound>()) 
-				{
-					NbtString tempRole, tempName;
-					if (composerData.TryGet("role", out tempRole) && composerData.TryGet("name", out tempName))
-						composerDataList.Add(new ComposerData(tempRole.StringValue, tempName.StringValue));
-					else
-					{
-						isOK = false;
-						break;
-					}
-				}
-
-				if (isOK)
-					Composers = composerDataList.ToArray();
-			}
-			
-			if (data.TryGet("tags", out NbtList tagData))
-			{
-				try
-				{
-					List<String> tagsList = new List<string>();
-
-					foreach (NbtString tag in tagData.ToArray<NbtString>())
-						tagsList.Add(tag.StringValue);
-
-					Tags = tagsList.ToArray();
-				}
-				catch (InvalidCastException)
-				{
-					Tags = null;
-				}
-			}
-			else
-				Tags = null;
-		}
-
-		public NbtCompound ToNbt()
-		{
-			NbtCompound data = new NbtCompound("metadata");
-			data.Add(new NbtString("title", Title));
-
-			return data;
-		}
+		Title = t ?? throw new ArgumentNullException("t");
+		Artist = Source = Audio = Artwork = null;
+		Composers = null;
+		Tags = null;
 	}
+
+	public Metadata(NbtCompound data)
+	{
+		Title = data.Get<NbtString>("title").StringValue;
+		NbtString temp;
+
+		if (data.TryGet("artist", out temp))
+			Artist = temp.StringValue;
+		else
+			Artist = null;
+		if (data.TryGet("source", out temp))
+			Source = temp.StringValue;
+		else
+			Source = null;
+		if (data.TryGet("audio", out temp))
+			Audio = temp.StringValue;
+		else
+			Audio = null;
+		if (data.TryGet("artwork", out temp))
+			Artwork = temp.StringValue;
+		else
+			Artwork = null;
+
+		Composers = null;
+		if (data.TryGet("composers", out NbtList composersList))
+		{
+			List<ComposerData> composerDataList = new List<ComposerData>();
+			Boolean isOK = true;
+
+			foreach(NbtCompound composerData in composersList.ToArray<NbtCompound>()) 
+			{
+				NbtString tempRole, tempName;
+				if (composerData.TryGet("role", out tempRole) && composerData.TryGet("name", out tempName))
+					composerDataList.Add(new ComposerData(tempRole.StringValue, tempName.StringValue));
+				else
+				{
+					isOK = false;
+					break;
+				}
+			}
+
+			if (isOK)
+				Composers = composerDataList.ToArray();
+		}
+		
+		if (data.TryGet("tags", out NbtList tagData))
+		{
+			try
+			{
+				List<String> tagsList = new List<String>();
+
+				foreach (NbtString tag in tagData.ToArray<NbtString>())
+					tagsList.Add(tag.StringValue);
+
+				Tags = tagsList.ToArray();
+			}
+			catch (InvalidCastException)
+			{
+				Tags = null;
+			}
+		}
+		else
+			Tags = null;
+	}
+
+	public NbtCompound ToNbt()
+	{
+		NbtCompound data = new NbtCompound("metadata");
+		data.Add(new NbtString("title", Title));
+
+		return data;
+	}
+}
+
 }

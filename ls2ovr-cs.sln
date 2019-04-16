@@ -8,7 +8,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LS2OVR", "LS2OVR\LS2OVR.csp
 		{BD0F6829-651D-43AD-9116-081839CAD8AE} = {BD0F6829-651D-43AD-9116-081839CAD8AE}
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "fNbt", "fNbt\fNbt.csproj", "{BD0F6829-651D-43AD-9116-081839CAD8AE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "fNbt", "fNbt\fNbt.csproj", "{BD0F6829-651D-43AD-9116-081839CAD8AE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LS2OVR.Pack", "LS2OVR.Pack\LS2OVR.Pack.csproj", "{F386B6C1-DD2F-4CF9-B7A7-4801A9E13A97}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -24,6 +26,10 @@ Global
 		{BD0F6829-651D-43AD-9116-081839CAD8AE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BD0F6829-651D-43AD-9116-081839CAD8AE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BD0F6829-651D-43AD-9116-081839CAD8AE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F386B6C1-DD2F-4CF9-B7A7-4801A9E13A97}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F386B6C1-DD2F-4CF9-B7A7-4801A9E13A97}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F386B6C1-DD2F-4CF9-B7A7-4801A9E13A97}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F386B6C1-DD2F-4CF9-B7A7-4801A9E13A97}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
