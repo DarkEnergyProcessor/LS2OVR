@@ -312,6 +312,15 @@ public class Beatmap
 			}
 		}
 	}
+
+	/// <summary>
+	/// Create new Beatmap object with specified Metadata.
+	/// </summary>
+	/// <param name="metadata">Beatmap metadata.</param>
+	public Beatmap(Metadata metadata)
+	{
+		BeatmapMetadata = metadata;
+	}
 };
 
 }
