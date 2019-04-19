@@ -102,33 +102,54 @@ public struct BeatmapData
 	/// Create new BeatmapData from NbtCompound.
 	/// </summary>
 	/// <param name="data">TAG_Compound containing the beatmap data.</param>
-	/// <exception cref="System.InvalidCastException">Thrown if some of the requied fields are missing or invalid.</exception>
+	/// <exception cref="LS2OVR.MissingRequiredFieldException">Thrown if some of the required fields are missing.</exception>
+	/// <exception cref="LS2OVR.FieldInvalidValueException">Thrown if some of the required fields are invalid.</exception>
 	public BeatmapData(NbtCompound data)
 	{
 		CustomUnitList = new List<CustomUnitInfo>();
 		MapData = new List<BeatmapTimingMap>();
 
-		Star = data.Get<NbtByte>("star").ByteValue;
-		StarRandom = data.Get<NbtByte>("star").ByteValue;
-		Background = TryGetBackground(data, "background", "backgroundList");
-		BackgroundRandom = TryGetBackground(data, "backgroundRandom", "randomBackgroundList");
-		SimultaneousFlagProperlyMarked = data.Get<NbtByte>("simultaneousMarked").ByteValue > 0;
+		Star = Util.GetRequiredByteField(data, "star");
+		StarRandom = Util.GetRequiredByteField(data, "starRandom");
+		SimultaneousFlagProperlyMarked = Util.GetRequiredByteField(data, "simultaneousMarked") > 0;
+
+		Background = TryGetBackground(data, "background");
+		BackgroundRandom = TryGetBackground(data, "backgroundRandom");
+
+		if (Background != null && BackgroundRandom == null)
+			throw new MissingRequiredFieldException("backgroundRandom");
 
 		Int32[] calculatedScore = new Int32[4];
 		Int32[] calculatedCombo = new Int32[4];
 
-		foreach (NbtCompound map in data.Get<NbtList>("map").ToArray<NbtCompound>())
+		NbtTag mapDataList = data["map"];
+		if (mapDataList is NbtList)
 		{
-			try
+			NbtList mapDataListObject = mapDataList as NbtList;
+
+			if (mapDataListObject.TagType == NbtTagType.Compound)
 			{
-				BeatmapTimingMap hitPoint = new BeatmapTimingMap(map);
-				calculatedCombo[3]++;
-				calculatedScore[3] += hitPoint.SwingNote ? 370 : 739;
-				MapData.Add(hitPoint);
+				foreach (NbtCompound map in mapDataListObject.ToArray<NbtCompound>())
+				{
+					try
+					{
+						BeatmapTimingMap hitPoint = new BeatmapTimingMap(map);
+						calculatedCombo[3]++;
+						calculatedScore[3] += hitPoint.SwingNote ? 370 : 739;
+						MapData.Add(hitPoint);
+					}
+					catch (InvalidCastException) {}
+					catch (InvalidOperationException) {}
+				}
+
+				if (MapData.Count == 0)
+					throw new FieldInvalidValueException("map");
 			}
-			catch (InvalidCastException) {}
-			catch (InvalidOperationException) {}
+			else
+				throw new FieldInvalidValueException("map");
 		}
+		else
+			throw new MissingRequiredFieldException("map");
 
 		calculatedScore[0] = (Int32) Math.Round(((Double) calculatedScore[3]) * 211.0 / 739.0);
 		calculatedScore[1] = (Int32) Math.Round(((Double) calculatedScore[3]) * 528.0 / 739.0);
@@ -182,11 +203,91 @@ public struct BeatmapData
 		if (data.TryGet("difficultyName", out NbtString difficultyName))
 			DifficultyName = difficultyName.StringValue;
 		else
-			DifficultyName = String.Format("{0}☆", Star); // dat star
+			DifficultyName = null;
 
 		_scoreInfo = TryGetScoreOrComboInformation(data, "scoreInfo") ?? calculatedScore;
 		_comboInfo = TryGetScoreOrComboInformation(data, "comboInfo") ?? calculatedCombo;
 	}
+
+	public static explicit operator NbtCompound(BeatmapData self)
+	{
+		NbtCompound data = new NbtCompound("beatmap")
+		{
+			new NbtByte("star", self.Star),
+			new NbtByte("starRandom", self.StarRandom),
+			new NbtByte("simultaneousMarked", (Byte) (self.SimultaneousFlagProperlyMarked ? 1 : 0))
+		};
+
+		if (self.DifficultyName != null)
+			data.Add(new NbtString("difficultyName", self.DifficultyName));
+		if (self.Background.HasValue)
+		{
+			BackgroundInfo background = self.Background.Value;
+			BackgroundInfo randomBG = self.BackgroundRandom ?? background;
+			NbtTag backgroundNBT;
+			NbtTag randomBackgroundNBT;
+			
+			if (background.IsComplex())
+			{
+				backgroundNBT = (NbtCompound) background;
+				backgroundNBT.Name = "background";
+			}
+			else
+				backgroundNBT = new NbtString("background", (String) background);
+			
+			if (randomBG.IsComplex())
+			{
+				randomBackgroundNBT = (NbtCompound) randomBG;
+				randomBackgroundNBT.Name = "backgroundRandom";
+			}
+			else
+				randomBackgroundNBT = new NbtString("backgroundRandom", (String) randomBG);
+
+			data.Add(backgroundNBT);
+			data.Add(randomBackgroundNBT);
+		}
+
+		if (self.CustomUnitList.Count > 0)
+		{
+			NbtList customUnitList = new NbtList("customUnitList");
+
+			foreach (CustomUnitInfo customUnit in self.CustomUnitList)
+				customUnitList.Add((NbtCompound) customUnit);
+			
+			data.Add(customUnitList);
+		}
+		
+		if (self._scoreInfo != null && self._scoreInfo.Length >= 4)
+		{
+			Int32[] temp = new Int32[4];
+			Array.Copy(self._scoreInfo, temp, 4);
+			data.Add(new NbtIntArray("scoreInfo", temp));
+		}
+
+		if (self._comboInfo != null && self._comboInfo.Length >= 4)
+		{
+			Int32[] temp = new Int32[4];
+			Array.Copy(self._comboInfo, temp, 4);
+			data.Add(new NbtIntArray("comboInfo", temp));
+		}
+
+		if (self.BaseScorePerTap > 0)
+			data.Add(new NbtInt("baseScorePerTap", self.BaseScorePerTap));
+		
+		if (self.InitialStamina > 0)
+			data.Add(new NbtShort("stamina", self.InitialStamina));
+		
+		NbtList mapList = new NbtList("map");
+		foreach (BeatmapTimingMap map in self.MapData)
+			mapList.Add((NbtCompound) map);
+
+		data.Add(mapList);
+
+		return data;
+	}
+
+	private Int32[] _scoreInfo;
+	private Int32[] _comboInfo;
 
 	internal static Int32[] TryGetScoreOrComboInformation(NbtCompound data, String key)
 	{
@@ -222,50 +323,36 @@ public struct BeatmapData
 		return null;
 	}
 
-	internal static BackgroundInfo? TryGetBackground(NbtCompound data, String key1, String key2)
+	internal static BackgroundInfo? TryGetBackground(NbtCompound data, String key)
 	{
-		NbtString temp;
-
-		if (data.TryGet(key2, out NbtCompound background))
+		if (data.TryGet(key, out NbtTag background))
 		{
-			try
+			if (background is NbtCompound)
 			{
-				return new BackgroundInfo(background);
-			}
-			catch (InvalidCastException)
-			{
-				if (data.TryGet(key1, out temp))
+				try
 				{
-					try
-					{
-						return new BackgroundInfo(temp.StringValue);
-					}
-					catch (FormatException)
-					{
-						return null;
-					}
+					return new BackgroundInfo((NbtCompound) background);
 				}
-				else
+				catch (ProblematicRequiredFieldException)
+				{
 					return null;
+				}
+			}
+			else if (background is NbtString)
+			{
+				try
+				{
+					return new BackgroundInfo(((NbtString) background).StringValue);
+				}
+				catch (FormatException)
+				{
+					return null;
+				}
 			}
 		}
-		else if (data.TryGet(key1, out temp))
-		{
-			try
-			{
-				return new BackgroundInfo(temp.StringValue);
-			}
-			catch (FormatException)
-			{
-				return null;
-			}
-		}
-		else
-			return null;
-	}
 
-	private Int32[] _scoreInfo;
-	private Int32[] _comboInfo;
+		return null;
+	}
 };
 
 }

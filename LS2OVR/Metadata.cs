@@ -43,7 +43,7 @@ public struct Metadata
 	/// <summary>
 	/// List of composers data.
 	/// </summary>
-	public ComposerData[] Composers {get; set;}
+	public List<ComposerData> Composers {get; set;}
 	/// <summary>
 	/// Audio file name.
 	/// </summary>
@@ -61,6 +61,7 @@ public struct Metadata
 	/// Create new Metadata with specified title and other data set to null
 	/// </summary>
 	/// <param name="t">Song title.</param>
+	/// <exception cref="System.ArgumentNullException">Thrown if <paramref name="t"/> is null.</exception>
 	public Metadata(String t)
 	{
 		Title = t ?? throw new ArgumentNullException("t");
@@ -69,10 +70,17 @@ public struct Metadata
 		Tags = null;
 	}
 
+	/// <summary>
+	/// Create new Metadata from specified NbtCompound.
+	/// </summary>
+	/// <param name="data">TAG_Compound data.</param>
+	/// <exception cref="LS2OVR.MissingRequiredFieldException">Thrown if required field(s) is missing.</exception>
+	/// <exception cref="LS2OVR.FieldInvalidValueException">Thrown if required field(s) has invalid value.</exception>
 	public Metadata(NbtCompound data)
 	{
-		Title = data.Get<NbtString>("title").StringValue;
 		NbtString temp;
+		Title = Util.GetRequiredStringField(data, "title");
+		Composers = new List<ComposerData>();
 
 		if (data.TryGet("artist", out temp))
 			Artist = temp.StringValue;
@@ -91,52 +99,73 @@ public struct Metadata
 		else
 			Artwork = null;
 
-		Composers = null;
-		if (data.TryGet("composers", out NbtList composersList))
+		if (data.TryGet("composers", out NbtTag composersList))
 		{
-			List<ComposerData> composerDataList = new List<ComposerData>();
-			Boolean isOK = true;
-
-			foreach(NbtCompound composerData in composersList.ToArray<NbtCompound>()) 
+			if (composersList is NbtList composerNbtListTag && composerNbtListTag.TagType == NbtTagType.Compound)
 			{
-				NbtString tempRole, tempName;
-				if (composerData.TryGet("role", out tempRole) && composerData.TryGet("name", out tempName))
-					composerDataList.Add(new ComposerData(tempRole.StringValue, tempName.StringValue));
-				else
+				List<ComposerData> composerDataList = new List<ComposerData>();
+
+				foreach (NbtCompound composerData in composerNbtListTag.ToArray<NbtCompound>())
 				{
-					isOK = false;
-					break;
+					try
+					{
+						if (composerData.TryGet("role", out NbtString tempRole) && composerData.TryGet("name", out temp))
+							Composers.Add(new ComposerData(tempRole.StringValue, temp.StringValue));
+					}
+					catch (InvalidCastException) {}
 				}
 			}
-
-			if (isOK)
-				Composers = composerDataList.ToArray();
 		}
 		
-		if (data.TryGet("tags", out NbtList tagData))
+		if (data.TryGet("tags", out NbtTag tagData))
 		{
-			try
+			if (tagData is NbtList tagDataList && tagDataList.TagType == NbtTagType.String)
 			{
 				List<String> tagsList = new List<String>();
 
-				foreach (NbtString tag in tagData.ToArray<NbtString>())
+				foreach (NbtString tag in tagDataList.ToArray<NbtString>())
 					tagsList.Add(tag.StringValue);
 
 				Tags = tagsList.ToArray();
 			}
-			catch (InvalidCastException)
-			{
+			else
 				Tags = null;
-			}
 		}
 		else
 			Tags = null;
 	}
 
-	public NbtCompound ToNbt()
+	public static explicit operator NbtCompound(Metadata self)
 	{
 		NbtCompound data = new NbtCompound("metadata");
-		data.Add(new NbtString("title", Title));
+		data.Add(new NbtString("title", self.Title));
+		
+		if (self.Artist != null)
+			data.Add(new NbtString("artist", self.Artist));
+		if (self.Source != null)
+			data.Add(new NbtString("source", self.Source));
+		if (self.Composers != null && self.Composers.Count > 0)
+		{
+			NbtList composerList = new NbtList("composers");
+
+			foreach (ComposerData composer in self.Composers)
+				composerList.Add((NbtCompound) composer);
+			
+			data.Add(composerList);
+		}
+		if (self.Audio != null)
+			data.Add(new NbtString("audio", self.Audio));
+		if (self.Artwork != null)
+			data.Add(new NbtString("artwork", self.Artwork));
+		if (self.Tags != null && self.Tags.Length > 0)
+		{
+			NbtList tagList = new NbtList("tags");
+
+			foreach (String tag in self.Tags)
+				tagList.Add(new NbtString(tag));
+			
+			data.Add(tagList);
+		}
 
 		return data;
 	}

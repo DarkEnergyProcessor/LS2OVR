@@ -17,6 +17,7 @@
 // 3. This notice may not be removed or altered from any source distribution.
 
 using System;
+using fNbt;
 
 namespace LS2OVR
 {
@@ -45,6 +46,15 @@ public struct ComposerData
 	{
 		Role = r ?? throw new ArgumentNullException("r");
 		Name = n ?? throw new ArgumentNullException("n");
+	}
+
+	public static explicit operator NbtCompound(ComposerData self)
+	{
+		return new NbtCompound()
+		{
+			new NbtString("role", self.Role),
+			new NbtString("name", self.Name)
+		};
 	}
 };
 

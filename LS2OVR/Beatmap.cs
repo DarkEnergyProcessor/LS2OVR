@@ -38,6 +38,15 @@ internal struct FileInfo
 		offset = data.Get<NbtInt>("offset").IntValue;
 		size = data.Get<NbtInt>("size").IntValue;
 	}
+
+	public static explicit operator NbtCompound(FileInfo self)
+	{
+		return new NbtCompound() {
+			new NbtString("filename", self.filename),
+			new NbtInt("offset", self.offset),
+			new NbtInt("size", self.size)
+		};
+	}
 };
 
 /// <summary>
@@ -48,6 +57,9 @@ public enum BeatmapCompressionType
 	None,
 	GZip,
 	ZLib,
+	LZ4,
+	Zstandard,
+	Brotli
 };
 
 /// <summary>
@@ -62,7 +74,7 @@ public class Beatmap
 	/// <summary>
 	/// Specification versionthat this library target, in string.
 	/// </summary>
-	public const String TargetVersionString = "0.6";
+	public const String TargetVersionString = "0.7";
 	/// <summary>
 	/// Library version.
 	/// </summary>
@@ -76,20 +88,31 @@ public class Beatmap
 	/// </summary>
 	public static readonly Byte[] EndOfFile = {111, 118, 101, 114, 114, 110, 98, 119};
 
+	/// <summary>
+	/// Beatmap metadata.
+	/// </summary>
 	public Metadata BeatmapMetadata {get; set;}
+	/// <summary>
+	/// List of beatmaps.
+	/// </summary>
 	public List<BeatmapData> BeatmapList {get; set;}
+	/// <summary>
+	/// List of additional files embedded inside the beatmap file.
+	/// </summary>
 	public Dictionary<String, Byte[]> FileDatabase {get; set;}
 
 	private static readonly Byte[] TagListWorkaround = {10, 0, 1, 95};
+	private static readonly Byte[] TransmissionCheck = {26, 10, 13, 10};
+	private static readonly Byte[] ZeroBuffer = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
 	/// <summary>
 	/// Create new Beatmap object by reading LS2OVR beatmap.
 	/// </summary>
 	/// <param name="stream">Input beatmap stream</param>
-	/// <exception cref="ArgumentException">Thrown when the stream is unreadable.</exception>
 	/// <exception cref="ArgumentNullException">Thrown when stream is null.</exception>
+	/// <exception cref="ArgumentException">Thrown when the stream is unreadable.</exception>
 	/// <exception cref="EndOfStreamException">Thrown when unexected end of stream occured.</exception>
-	/// <exception cref="IOException">Thrown when I/O problems occured.</exception>
+	/// <exception cref="IOException">Thrown when I/O problems occured in stream.</exception>
 	/// <exception cref="InvalidBeatmapFileException">Thrown when file is invalid LS2OVR beatmap.</exception>
 	public Beatmap(Stream stream)
 	{
@@ -196,8 +219,12 @@ public class Beatmap
 
 				break;
 			}
+			case (Byte) BeatmapCompressionType.LZ4:
+			case (Byte) BeatmapCompressionType.Zstandard:
+			case (Byte) BeatmapCompressionType.Brotli:
+				throw new InvalidBeatmapFileException(String.Format("unsupported compression mode {0}", (Int32) beatmapDataCompressionType));
 			default:
-				throw new InvalidBeatmapFileException("unknown or unsupported compression mode");
+				throw new InvalidBeatmapFileException("unknown compression mode");
 		}
 
 		// Read beatmap data
@@ -320,6 +347,181 @@ public class Beatmap
 	public Beatmap(Metadata metadata)
 	{
 		BeatmapMetadata = metadata;
+	}
+
+	/// <summary>
+	/// Writes the beatmap to specified stream.
+	/// </summary>
+	/// <param name="output">Stream output.</param>
+	/// <param name="compression">Beatmap data compression algorithm.</param>
+	public void WriteTo(Stream output, BeatmapCompressionType compression = BeatmapCompressionType.GZip)
+	{
+		//MemoryStream output = new MemoryStream();
+		if (output == null)
+			throw new ArgumentNullException("output");
+		else if (output.CanWrite == false)
+			throw new NotSupportedException("stream is not upen for writing");
+
+		BinaryWriter writer = new BinaryWriter(output);
+
+		// Header
+		writer.Write(Signature);
+		writer.Write(IPAddress.HostToNetworkOrder(TargetVersion | 0x80000000));
+		writer.Write(TransmissionCheck);
+
+		// Metadata
+		Byte[] metadataNbt = (new NbtFile((NbtCompound) BeatmapMetadata)).SaveToBuffer(NbtCompression.None);
+		Byte[] metadataMD5 = Util.MD5Hash(metadataNbt);
+		writer.Write(metadataNbt);
+		writer.Write(metadataMD5);
+
+		// Beatmap data
+		Byte[] beatmapDataBuffer = null;
+		writer.Write((Byte) compression);
+
+		using (MemoryStream beatmapDataStream = new MemoryStream())
+		{
+			BinaryWriter beatmapDataWriter = new BinaryWriter(beatmapDataStream);
+			beatmapDataStream.WriteByte((Byte) BeatmapList.Count);
+			foreach (BeatmapData beatmap in BeatmapList)
+			{
+				Byte[] beatmapDataNbt = (new NbtFile((NbtCompound) beatmap)).SaveToBuffer(NbtCompression.None);
+				Byte[] beatmapDataMD5 = Util.MD5Hash(beatmapDataNbt);
+				beatmapDataWriter.Write(IPAddress.HostToNetworkOrder(beatmapDataNbt.Length));
+				beatmapDataWriter.Write(beatmapDataNbt);
+				beatmapDataWriter.Write(beatmapDataMD5);
+			}
+
+			beatmapDataBuffer = beatmapDataStream.ToArray();
+		}
+
+		switch (compression)
+		{
+			case BeatmapCompressionType.None:
+			{
+				writer.Write(IPAddress.HostToNetworkOrder(beatmapDataBuffer.Length));
+				writer.Write(IPAddress.HostToNetworkOrder(beatmapDataBuffer.Length));
+				writer.Write(beatmapDataBuffer);
+				break;
+			}
+			case BeatmapCompressionType.GZip:
+			{
+				MemoryStream compressorStream = new MemoryStream();
+				GZipStream compressor = new GZipStream(compressorStream, CompressionLevel.Optimal, true);
+				compressor.Write(beatmapDataBuffer, 0, beatmapDataBuffer.Length);
+				compressor.Close();
+				Byte[] compressedData = compressorStream.ToArray();
+				writer.Write(IPAddress.HostToNetworkOrder(compressedData.Length));
+				writer.Write(IPAddress.HostToNetworkOrder(beatmapDataBuffer.Length));
+				writer.Write(compressedData);
+				break;
+			}
+			case BeatmapCompressionType.ZLib:
+			{
+				MemoryStream compressorStream = new MemoryStream();
+				ZLibStream compressor = new ZLibStream(compressorStream, CompressionMode.Compress, true);
+				compressor.Write(beatmapDataBuffer, 0, beatmapDataBuffer.Length);
+				compressor.Close();
+				Byte[] compressedData = compressorStream.ToArray();
+				writer.Write(IPAddress.HostToNetworkOrder(compressedData.Length));
+				writer.Write(IPAddress.HostToNetworkOrder(beatmapDataBuffer.Length));
+				writer.Write(compressedData);
+				break;
+			}
+			case BeatmapCompressionType.LZ4:
+			case BeatmapCompressionType.Zstandard:
+			case BeatmapCompressionType.Brotli:
+				throw new NotImplementedException(String.Format("unsupported compression {0}", compression));
+			default:
+				throw new NotImplementedException("unknown compression");
+		}
+
+		// Additional file. 2-pass
+		if (FileDatabase != null && FileDatabase.Count > 0)
+		{
+			NbtList fileListNbt = new NbtList("additionalData", NbtTagType.Compound);
+
+			// 1st pass
+			foreach (KeyValuePair<String, Byte[]> file in FileDatabase)
+			{
+				fileListNbt.Add(new NbtCompound() {
+					new NbtString("filename", file.Key),
+					new NbtInt("offset", 0),
+					new NbtInt("size", 0)
+				});
+			}
+
+			// file offset start = current position + filelist nbt size + filelist + eof mark
+			Int32 fileStart = Util.AlignNextMultiple((Int32) output.Position + 4 + Util.CreateNbtList(fileListNbt).Length + EndOfFile.Length);
+			Int32 offsetStart = fileStart;
+
+			// 2nd pass
+			fileListNbt = new NbtList("additionalData", NbtTagType.Compound);
+			List<FileInfo> fileList = new List<FileInfo>();
+
+			foreach (KeyValuePair<String, Byte[]> file in FileDatabase)
+			{
+				FileInfo fileInfo = new FileInfo() {
+					filename = file.Key,
+					offset = offsetStart,
+					size = file.Value.Length
+				};
+				fileListNbt.Add((NbtCompound) fileInfo);
+
+				offsetStart = Util.AlignNextMultiple(offsetStart + fileInfo.size);
+			}
+
+			// Write file list header
+			Byte[] additionalFile = Util.CreateNbtList(fileListNbt);
+			writer.Write(IPAddress.HostToNetworkOrder(additionalFile.Length));
+			writer.Write(additionalFile);
+			writer.Write(EndOfFile);
+
+			// Write file data
+			foreach (FileInfo file in fileList)
+			{
+				Int32 padding = file.offset - (Int32) output.Position;
+
+				if (padding > 0)
+					writer.Write(ZeroBuffer, 0, padding);
+				else if (padding < 0)
+					break;
+				
+				writer.Write(FileDatabase[file.filename]);
+			}
+		}
+		else
+			writer.Write(EndOfFile);
+	}
+
+	/// <summary>
+	/// Write the beatmap data to byte array.
+	/// </summary>
+	/// <param name="compression">Beatmap data compression algorithm.</param>
+	/// <returns>Byte array containing the encoded beatmap data.</returns>
+	public Byte[] ToBuffer(BeatmapCompressionType compression = BeatmapCompressionType.GZip)
+	{
+		MemoryStream stream = new MemoryStream();
+		WriteTo(stream, compression);
+		return stream.ToArray();
+	}
+
+	/// <summary>
+	/// Checks whetever specified compression algorithm is supported.
+	/// None (uncompressed/no compression), GZip, and Zlib support is guaranteed.
+	/// </summary>
+	/// <param name="compression">Compression algorithm to check.</param>
+	public static Boolean IsCompressionSupported(BeatmapCompressionType compression)
+	{
+		switch (compression)
+		{
+			case BeatmapCompressionType.None:
+			case BeatmapCompressionType.GZip:
+			case BeatmapCompressionType.ZLib:
+				return true;
+			default:
+				return false;
+		}
 	}
 };
 

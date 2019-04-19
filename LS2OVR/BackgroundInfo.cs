@@ -56,7 +56,7 @@ public struct BackgroundInfo
 	/// Create new BackgroundInfo with specified background number.
 	/// </summary>
 	/// <param name="number">Background number (must be greater than 0).</param>
-	/// <exception cref="ArgumentOutOfRangeException">Thrown if <paramref name="number"/> is 0 or negative.</exception>
+	/// <exception cref="System.ArgumentOutOfRangeException">Thrown if <paramref name="number"/> is 0 or negative.</exception>
 	public BackgroundInfo(Int32 number)
 	{
 		if (number <= 0)
@@ -75,8 +75,8 @@ public struct BackgroundInfo
 	/// <param name="r">Right background filename.</param>
 	/// <param name="t">Top background filename.</param>
 	/// <param name="b">Bottom background filename.</param>
-	/// <exception cref="ArgumentNullException">Thrown if <paramref name="main"/> is null.</exception>
-	/// <exception cref="FormatException">Thrown if <paramref name="main"/> is not correct number format.</exception>
+	/// <exception cref="System.ArgumentNullException">Thrown if <paramref name="main"/> is null.</exception>
+	/// <exception cref="System.FormatException">Thrown if <paramref name="main"/> is not correct number format.</exception>
 	public BackgroundInfo(String main, String l = null, String r = null, String t = null, String b = null)
 	{
 		if (main == null)
@@ -119,12 +119,21 @@ public struct BackgroundInfo
 	/// Create new BackgroundInfo based on NBT data.
 	/// </summary>
 	/// <param name="data">TAG_Compound NBT data.</param>
-	/// <exception cref="InvalidCastException">Thrown if "main" field in NBT is missing or invalid.</exception>
+	/// <exception cref="LS2OVR.MissingRequiredFieldException">Thrown if "main" field in NBT is missing.</exception>
+	/// <exception cref="LS2OVR.FieldInvalidValueException">Thrown if "main" field in NBT is invalid.</exception>
 	public BackgroundInfo(NbtCompound data)
 	{
 		NbtString temp1, temp2;
-		Main = data.Get<NbtString>("main").StringValue;
+		NbtTag mainBackgroundTag = data["main"];
 		BackgroundNumber = 0;
+
+		if (mainBackgroundTag == null)
+			throw new MissingRequiredFieldException("main");
+		else if (mainBackgroundTag is NbtString == false)
+			throw new FieldInvalidValueException("main");
+		else
+			Main = mainBackgroundTag.StringValue;
+
 
 		if (data.TryGet("left", out temp1) && data.TryGet("right", out temp2))
 		{
@@ -144,11 +153,17 @@ public struct BackgroundInfo
 			Top = Bottom = null;
 	}
 
+	/// <summary>
+	/// Check whetever the left & right brackground is present.
+	/// </summary>
 	public Boolean IsValidLeftRightBackground()
 	{
 		return Left != null && Right != null;
 	}
 
+	/// <summary>
+	/// Check whetever the top & bottom background is present.
+	/// </summary>
 	public Boolean IsValidTopBottomBackground()
 	{
 		return Top != null && Bottom != null;
@@ -165,6 +180,12 @@ public struct BackgroundInfo
 		return (IsValidLeftRightBackground() || IsValidTopBottomBackground()) && BackgroundNumber == 0;
 	}
 	
+	/// <summary>
+	/// Cast the BackgroundInfo to NbtCompound.
+	/// </summary>
+	/// <param name="self">BackgroundInfo object.</param>
+	/// <exception cref="System.InvalidCastException">Thrown if background info is simple.</exception>
+	/// <seealso cref="IsComplex"/>
 	public static explicit operator NbtCompound(BackgroundInfo self)
 	{
 		if (self.IsComplex() == false)
@@ -188,6 +209,12 @@ public struct BackgroundInfo
 		return data;
 	}
 
+	/// <summary>
+	/// Cast BackgroundInfo to string representation.
+	/// </summary>
+	/// <param name="self">BackgroundInfo object.</param>
+	/// <exception cref="System.InvalidCastException">Thrown if background info is complex.</exception>
+	/// <seealso cref="IsComplex"/>
 	public static explicit operator String(BackgroundInfo self)
 	{
 		if (self.IsComplex())

@@ -53,16 +53,24 @@ public struct CustomUnitInfo
 	/// Create new CustomUnitInfo from NBT data.
 	/// </summary>
 	/// <param name="data">NBT compound data.</param>
-	/// <exception cref="System.InvalidCastException">Thrown if field(s) is missing or invalid.</exception>
-	/// <exception cref="System.InvalidOperationException">Thrown if "position" is out of range.</exception>
+	/// <exception cref="LS2OVR.MissingRequiredFieldException">Thrown if required field(s) is missing.</exception>
+	/// <exception cref="LS2OVR.FieldInvalidValueException">Thrown if required field(s) has invalid value.</exception>
 	public CustomUnitInfo(NbtCompound data)
 	{
-		Position = data.Get<NbtByte>("position").ByteValue;
+		Position = Util.GetRequiredByteField(data, "position");
 		if (Position <= 0 || Position > 9)
-			// Cannot use ArgumentOutOfRange exception
-			throw new InvalidOperationException("\"position\" is out of range");
+			throw new FieldInvalidValueException("position", "out of range");
 
-		Filename = data.Get<NbtString>("filename").StringValue;
+		Filename = Util.GetRequiredStringField(data, "filename");
+	}
+
+	public static explicit operator NbtCompound(CustomUnitInfo self)
+	{
+		return new NbtCompound()
+		{
+			new NbtByte("position", self.Position),
+			new NbtString("filename", self.Filename)
+		};
 	}
 };
 

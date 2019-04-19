@@ -106,21 +106,21 @@ public struct BeatmapTimingMap
 	/// Create new BeatmapTimingMap object from specified NbtCompound.
 	/// </summary>
 	/// <param name="data">TAG_Compound NBT data.</param>
-	/// <exception cref="System.InvalidOperationException">Thrown when needed field(s) has invalid value.</exception>
-	/// <exception cref="System.InvalidCastException">Thrown when needed field(s) is missing.</exception>
+	/// <exception cref="LS2OVR.FieldInvalidValueException">Thrown when needed field(s) has invalid value.</exception>
+	/// <exception cref="LS2OVR.MissingRequiredFieldException">Thrown when needed field(s) is missing.</exception>
 	public BeatmapTimingMap(NbtCompound data)
 	{
 		// "time" field
-		Time = data.Get<NbtDouble>("time").DoubleValue;
+		Time = Util.GetRequiredDoubleField(data, "time");
 		if (Time <= 0)
-			throw new InvalidOperationException("\"time\" is 0 or negative");
+			throw new FieldInvalidValueException("time", "0 or negative");
 		else if (Time != Time)
-			throw new InvalidOperationException("\"time\" is nan");
+			throw new FieldInvalidValueException("time", "nan");
 		else if (Time == Double.PositiveInfinity)
-			throw new InvalidOperationException("\"time\" is infinity");
+			throw new FieldInvalidValueException("time", "infinity");
 
 		// "attribute" field
-		UInt32 tempAttr = (UInt32) data.Get<NbtInt>("attribute").IntValue;
+		UInt32 tempAttr = (UInt32) Util.GetRequiredIntField(data, "attribute");
 
 		if ((tempAttr & 0x0F) == 15)
 		{
@@ -136,12 +136,12 @@ public struct BeatmapTimingMap
 		}
 		
 		// "position" field
-		_position = data.Get<NbtByte>("position").ByteValue;
+		_position = Util.GetRequiredByteField(data, "position");
 		if (_position <= 0 || _position > 9)
-			throw new InvalidOperationException("\"position\" is out of range");
+			throw new FieldInvalidValueException("position", "out of range");
 		
 		// "flags" field
-		Byte flags = data.Get<NbtByte>("flags").ByteValue;
+		Byte flags = Util.GetRequiredByteField(data, "flags");
 		Boolean isSwing = (flags & 4) > 0;
 
 		switch (flags & 3)
@@ -175,22 +175,22 @@ public struct BeatmapTimingMap
 		_swing = isSwing;
 		if (isSwing)
 		{
-			NoteGroup = data.Get<NbtInt>("noteGroup").IntValue;
+			NoteGroup = Util.GetRequiredIntField(data, "noteGroup");
 			if (NoteGroup <= 0)
-				throw new InvalidOperationException("\"noteGroup\" is 0 or negative");
+				throw new FieldInvalidValueException("noteGroup", "0 or negative");
 		}
 		else
 			NoteGroup = 0;
 		
 		if (NoteType == NoteMapType.LongNote)
 		{
-			Length = data.Get<NbtDouble>("length").DoubleValue;
+			Length = Util.GetRequiredDoubleField(data, "length");
 			if (Length <= 0)
-				throw new InvalidOperationException("\"length\" is 0 or negative");
+				throw new FieldInvalidValueException("length", "0 or negative");
 			else if (Length != Length)
-				throw new InvalidOperationException("\"length\" is nan");
+				throw new FieldInvalidValueException("length", "nan");
 			else if (Length == Double.PositiveInfinity)
-				throw new InvalidOperationException("\"length\" is infinity");
+				throw new FieldInvalidValueException("length", "infinity");
 		}
 		else
 			Length = 0;

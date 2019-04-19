@@ -27,6 +27,35 @@ namespace LS2OVR
 public class InvalidBeatmapFileException: Exception
 {
 	public InvalidBeatmapFileException(String message): base(message) {}
-}
+};
+
+/// <summary>
+/// Exception class that is thrown when there's problem loading required field.
+/// </summary>
+public class ProblematicRequiredFieldException: InvalidBeatmapFileException
+{
+	public ProblematicRequiredFieldException(String fieldName, String message)
+	: base($"{message}: {fieldName}") {}
+};
+
+/// <summary>
+/// Exception class that is thrown when required field is missing.
+/// </summary>
+public class MissingRequiredFieldException: ProblematicRequiredFieldException
+{
+	public MissingRequiredFieldException(String fieldName)
+	: base(fieldName, "Missing required field") {}
+};
+
+/// <summary>
+/// Exception class that is thrown when required field has invalid value.
+/// </summary>
+public class FieldInvalidValueException: ProblematicRequiredFieldException
+{
+	public FieldInvalidValueException(String fieldName, String additionalMessage)
+	: base(fieldName, $"Invalid field ({additionalMessage})") {}
+	public FieldInvalidValueException(String fieldName)
+	: base(fieldName, "Inalid field value") {}
+};
 
 }
