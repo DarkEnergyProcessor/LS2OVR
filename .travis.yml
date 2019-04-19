@@ -1,16 +1,17 @@
 language: csharp
-solution: LS2OVR.sln
+solution: ls2ovr-cs.sln
+dist: xenial
 
 matrix:
   include:
   - mono: latest
     script:
-    - msbuild /p:Configuration=Release LS2OVR.sln
+    - msbuild /p:Configuration=Release ls2ovr-cs.sln
   - dotnet: 2.2.203
     mono: none
     script:
-    - dotnet build -c Release LS2OVR.sln
+    - dotnet build -c Release ls2ovr-cs.sln
   allow_failures:
   - mono: latest
     script:
-    - msbuild /p:Configuration=Release LS2OVR.sln
+    - msbuild /p:Configuration=Release ls2ovr-cs.sln
