@@ -23,7 +23,7 @@ namespace LS2OVR
 {
 
 /// <summary>
-/// Class that contains background information.
+/// Structure that contains background information.
 /// </summary>
 public struct BackgroundInfo
 {

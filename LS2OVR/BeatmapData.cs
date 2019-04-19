@@ -296,27 +296,21 @@ public struct BeatmapData
 			Int32[] arrayData = result.IntArrayValue;
 			if (arrayData.Length >= 4)
 			{
-				Boolean isOK = true;
-
-				for (Int32 i = 0; i < 4 && isOK == false; i++)
+				for (Int32 i = 0; i < 4; i++)
 				{
 					if (arrayData[i] > 0)
 					{
 						if (i > 0)
 						{
 							if (arrayData[i] <= arrayData[i - 1])
-								isOK = false;
+								return null;
 						}
 					}
 					else
-					{
-						isOK = false;
-						break;
-					}
+						return null;
 				}
-
-				if (isOK)
-					return arrayData;
+				
+				return arrayData;
 			}
 		}
 

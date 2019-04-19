@@ -1,0 +1,16 @@
+language: csharp
+solution: LS2OVR.sln
+
+matrix:
+  include:
+  - mono: latest
+    script:
+    - msbuild /p:Configuration=Release LS2OVR.sln
+  - dotnet: 2.2.203
+    mono: none
+    script:
+    - dotnet build -c Release LS2OVR.sln
+  allow_failures:
+  - mono: latest
+    script:
+    - msbuild /p:Configuration=Release LS2OVR.sln
