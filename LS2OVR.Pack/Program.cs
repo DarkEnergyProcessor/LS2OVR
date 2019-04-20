@@ -17,7 +17,7 @@ class Program
 		: base($"Unknown compression: {message}") {}
 	};
 
-	internal BeatmapCompressionType MapFromSupportedCompression(String comp)
+	internal static BeatmapCompressionType MapFromSupportedCompression(String comp)
 	{
 		if (comp.Equals("none", StringComparison.CurrentCultureIgnoreCase))
 			return BeatmapCompressionType.None;
@@ -53,6 +53,7 @@ class Program
 			String ls2ovrYml = null;
 			String currentDir = options.DefaultDirectory;
 			String outputFile = options.OutputFile;
+			BeatmapCompressionType defaultCompression = BeatmapCompressionType.GZip;
 			FileAttributes inputAttribute = File.GetAttributes(options.InputFile);
 
 			if ((inputAttribute & FileAttributes.Directory) > 0)
@@ -72,6 +73,9 @@ class Program
 
 			if (outputFile == null)
 				outputFile = Path.GetFileName(Path.GetDirectoryName(ls2ovrYml)) + ".ls2ovr";
+			
+			if (options.Compression != null)
+				defaultCompression = MapFromSupportedCompression(options.Compression);
 
 			YamlStream yaml = new YamlStream();
 			StreamReader yamlReader = File.OpenText(ls2ovrYml);
@@ -111,7 +115,7 @@ class Program
 			
 			// Encode beatmap
 			FileStream outputFileStream = new FileStream(outputFile, FileMode.Create, FileAccess.Write);
-			beatmap.WriteTo(outputFileStream);
+			beatmap.WriteTo(outputFileStream, defaultCompression);
 		}
 		// not good
 		catch (Exception e)

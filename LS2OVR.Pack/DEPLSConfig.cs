@@ -115,8 +115,8 @@ internal class DEPLSConfig
 				StarRandom = Byte.Parse(((YamlScalarNode) beatmap[Key("star-random")]).Value),
 				DifficultyName = GetYamlValue(beatmap, "difficulty-name"),
 				Background = TryGetBackground(beatmap, "background"),
-				ScoreInfo = TryGetIntArrayInfo(beatmap, "score-info"),
-				ComboInfo = TryGetIntArrayInfo(beatmap, "combo-info")
+				ScoreInfo = TryGetIntArrayInfo(beatmap, "score-rank"),
+				ComboInfo = TryGetIntArrayInfo(beatmap, "combo-rank")
 			};
 
 			if (beatmapData.Background != null)
@@ -270,11 +270,10 @@ internal class DEPLSConfig
 				{
 					if (i > 0)
 					{
-						if (arrayData[i] <= arrayData[i - 1])
+						if (infoValue <= arrayData[i - 1])
 							return null;
-						else
-							arrayData[i] = infoValue;
 					}
+					arrayData[i] = infoValue;
 				}
 				else
 					return null;
