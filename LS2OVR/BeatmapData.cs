@@ -60,7 +60,7 @@ public struct BeatmapData
 			return _scoreInfo;
 		}
 		set {
-			if (value.Length < 4)
+			if (value != null && value.Length < 4)
 				throw new ArgumentException("array size must be at least 4", "value");
 			_scoreInfo = value;
 		}
@@ -76,7 +76,7 @@ public struct BeatmapData
 		}
 		set
 		{
-			if (value.Length < 4)
+			if (value != null && value.Length < 4)
 				throw new ArgumentException("array size must be at least 4", "value");
 			_comboInfo = value;
 		}

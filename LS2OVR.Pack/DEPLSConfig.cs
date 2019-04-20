@@ -188,6 +188,32 @@ internal class DEPLSConfig
 		return beatmapDataList;
 	}
 
+	public static Dictionary<String, Byte[]> ReadAdditionalFileFromYaml(YamlDocument document, String currentDirectory)
+	{
+		if (document == null)
+			throw new ArgumentNullException("document");
+		
+		if (currentDirectory == null)
+			throw new ArgumentNullException("currentDirectory");
+		
+		Dictionary<String, Byte[]> fileList = new Dictionary<String, Byte[]>();
+		YamlMappingNode map = (YamlMappingNode) document.RootNode;
+		YamlSequenceNode additionalFileList = (YamlSequenceNode) map[Key("additional-files")];
+
+		foreach (YamlNode file in additionalFileList)
+		{
+			if (file is YamlMappingNode fileInfo)
+			{
+				if (fileInfo["name"] is YamlScalarNode name && fileInfo["file"] is YamlScalarNode fileTarget)
+					fileList[name.Value] = File.ReadAllBytes(currentDirectory + '/' + fileTarget.Value);
+			}
+			else if (file is YamlScalarNode fileTarget)
+				fileList[fileTarget.Value] = File.ReadAllBytes(currentDirectory + '/' + fileTarget.Value);
+		}
+
+		return fileList;
+	}
+
 	internal static BackgroundInfo? TryGetBackground(YamlMappingNode map, String key)
 	{
 		if (map.Children.TryGetValue(Key(key), out YamlNode background))

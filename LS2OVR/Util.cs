@@ -118,7 +118,7 @@ internal class Util
 		
 		(new NbtFile(workaround)).SaveToStream(buffer, NbtCompression.None);
 		Byte[] output = new Byte[buffer.Position - 1 - 4];
-		Array.Copy(buffer.ToArray(), 1, output, 0, output.Length);
+		Array.Copy(buffer.ToArray(), 4, output, 0, output.Length);
 		return output;
 	}
 

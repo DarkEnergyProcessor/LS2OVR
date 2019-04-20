@@ -360,18 +360,21 @@ public class Beatmap
 		if (output == null)
 			throw new ArgumentNullException("output");
 		else if (output.CanWrite == false)
-			throw new NotSupportedException("stream is not upen for writing");
+			throw new NotSupportedException("stream is not open for writing");
 
 		BinaryWriter writer = new BinaryWriter(output);
 
 		// Header
+		// Workaround format writing.
+		UInt32 format = TargetVersion | 0x80000000;
 		writer.Write(Signature);
-		writer.Write(IPAddress.HostToNetworkOrder(TargetVersion | 0x80000000));
+		writer.Write(IPAddress.HostToNetworkOrder((Int32) format));
 		writer.Write(TransmissionCheck);
 
 		// Metadata
 		Byte[] metadataNbt = (new NbtFile((NbtCompound) BeatmapMetadata)).SaveToBuffer(NbtCompression.None);
 		Byte[] metadataMD5 = Util.MD5Hash(metadataNbt);
+		writer.Write(IPAddress.HostToNetworkOrder(metadataNbt.Length));
 		writer.Write(metadataNbt);
 		writer.Write(metadataMD5);
 
@@ -466,6 +469,7 @@ public class Beatmap
 					offset = offsetStart,
 					size = file.Value.Length
 				};
+				fileList.Add(fileInfo);
 				fileListNbt.Add((NbtCompound) fileInfo);
 
 				offsetStart = Util.AlignNextMultiple(offsetStart + fileInfo.size);
