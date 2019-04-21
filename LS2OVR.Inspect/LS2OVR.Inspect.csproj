@@ -4,17 +4,16 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp2.0</TargetFramework>
     <Version>0.1</Version>
+    <Description>Shows information about LS2OVR beatmap file.</Description>
+    <RepositoryUrl>https://github.com/MikuAuahDark/LS2OVR</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/MikuAuahDark/LS2OVR</PackageProjectUrl>
     <Authors>Dark Energy Processor Corporation</Authors>
-    <Description>Pack DEPLS project to LS2OVR beatmap file.</Description>
     <Copyright>Copyright (c) 2039 Dark Energy Processor</Copyright>
     <PackageLicenseUrl>https://www.zlib.net/zlib_license.html</PackageLicenseUrl>
-    <PackageProjectUrl>https://github.com/MikuAuahDark/LS2OVR</PackageProjectUrl>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="CommandLineParser" Version="2.4.3" />
-    <PackageReference Include="Newtonsoft.Json" Version="12.0.1" />
-    <PackageReference Include="YamlDotNet" Version="6.0.0" />
   </ItemGroup>
 
   <ItemGroup>

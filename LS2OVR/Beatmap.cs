@@ -89,6 +89,10 @@ public class Beatmap
 	public static readonly Byte[] EndOfFile = {111, 118, 101, 114, 114, 110, 98, 119};
 
 	/// <summary>
+	/// Beatmap format version.
+	/// </summary>
+	public Int32 BeatmapFormatVersion {get; set;}
+	/// <summary>
 	/// Beatmap metadata.
 	/// </summary>
 	public Metadata BeatmapMetadata {get; set;}
@@ -135,7 +139,7 @@ public class Beatmap
 
 		if ((format & 0x80000000U) == 0)
 			throw new InvalidBeatmapFileException("non-8-bit transmission detected");
-		if ((format & 0x7FFFFFFFU) > TargetVersion)
+		if ((BeatmapFormatVersion = (Int32) (format & 0x7FFFFFFFU)) > TargetVersion)
 			throw new InvalidBeatmapFileException("file format is too new");
 
 		// Detect EOL translation
@@ -324,6 +328,8 @@ public class Beatmap
 
 			fileList.Sort((FileInfo a, FileInfo b) => a.offset.CompareTo(b.offset));
 
+			Dictionary<String, Byte[]> fileDB = new Dictionary<String, Byte[]>();
+
 			// enumerate all files
 			foreach (FileInfo files in fileList)
 			{
@@ -334,9 +340,12 @@ public class Beatmap
 					// Should've detect intersection but uh oh.
 					break;
 
-				FileDatabase.Add(files.filename, reader.ReadBytes(files.size));
+				fileDB.Add(files.filename, reader.ReadBytes(files.size));
 				currentPosition += files.size;
 			}
+
+			if (fileDB.Count > 0)
+				FileDatabase = fileDB;
 		}
 	}
 

@@ -123,11 +123,9 @@ public struct BeatmapData
 		Int32[] calculatedCombo = new Int32[4];
 
 		NbtTag mapDataList = data["map"];
-		if (mapDataList is NbtList)
+		if (mapDataList is NbtList mapDataListObject)
 		{
-			NbtList mapDataListObject = mapDataList as NbtList;
-
-			if (mapDataListObject.TagType == NbtTagType.Compound)
+			if (mapDataListObject.ListType == NbtTagType.Compound)
 			{
 				foreach (NbtCompound map in mapDataListObject.ToArray<NbtCompound>())
 				{

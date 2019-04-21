@@ -101,10 +101,8 @@ public struct Metadata
 
 		if (data.TryGet("composers", out NbtTag composersList))
 		{
-			if (composersList is NbtList composerNbtListTag && composerNbtListTag.TagType == NbtTagType.Compound)
+			if (composersList is NbtList composerNbtListTag && composerNbtListTag.ListType == NbtTagType.Compound)
 			{
-				List<ComposerData> composerDataList = new List<ComposerData>();
-
 				foreach (NbtCompound composerData in composerNbtListTag.ToArray<NbtCompound>())
 				{
 					try
@@ -119,7 +117,7 @@ public struct Metadata
 		
 		if (data.TryGet("tags", out NbtTag tagData))
 		{
-			if (tagData is NbtList tagDataList && tagDataList.TagType == NbtTagType.String)
+			if (tagData is NbtList tagDataList && tagDataList.ListType == NbtTagType.String)
 			{
 				List<String> tagsList = new List<String>();
 
