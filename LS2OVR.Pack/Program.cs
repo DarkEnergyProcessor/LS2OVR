@@ -4,10 +4,20 @@ using System.IO;
 using CommandLine;
 using YamlDotNet.RepresentationModel;
 
-namespace LS2OVR
+namespace LS2OVR.Pack
 {
-namespace Pack
+
+internal class Options
 {
+	[Value(0, MetaName = "input", Required = true, HelpText = "Set the input filename/directory")]
+	public String InputFile {get; set;}
+	[Option('d', "directory", Required = false, HelpText = "Set the directory where packer looks for files.")]
+	public String DefaultDirectory {get; set;} = null;
+	[Option('c', "compression", Required = false, HelpText = "Set the beatmap compression algorithm. GZip is default.")]
+	public String Compression {get; set;} = null;
+	[Value(1, MetaName = "output", Required = false, HelpText = "Set the output filename")]
+	public String OutputFile {get; set;} = null;
+};
 
 class Program
 {
@@ -19,27 +29,15 @@ class Program
 
 	internal static BeatmapCompressionType MapFromSupportedCompression(String comp)
 	{
-		if (comp.Equals("none", StringComparison.CurrentCultureIgnoreCase))
+		if (comp.Equals("none", StringComparison.InvariantCultureIgnoreCase))
 			return BeatmapCompressionType.None;
-		else if (comp.Equals("gzip", StringComparison.CurrentCultureIgnoreCase))
+		else if (comp.Equals("gzip", StringComparison.InvariantCultureIgnoreCase))
 			return BeatmapCompressionType.GZip;
-		else if (comp.Equals("zlib", StringComparison.CurrentCultureIgnoreCase))
+		else if (comp.Equals("zlib", StringComparison.InvariantCultureIgnoreCase))
 			return BeatmapCompressionType.ZLib;
 		else
 			throw new UnknownCompressionTypeException(comp);
 	}
-
-	internal class Options
-	{
-		[Value(0, MetaName = "input", Required = true, HelpText = "Set the input filename/directory")]
-		public String InputFile {get; set;}
-		[Option('d', "directory", Required = false, HelpText = "Set the directory where packer looks for files.")]
-		public String DefaultDirectory {get; set;} = null;
-		[Option('c', "compression", Required = false, HelpText = "Set the beatmap compression algorithm. GZip is default.")]
-		public String Compression {get; set;} = null;
-		[Value(1, MetaName = "output", Required = false, HelpText = "Set the output filename")]
-		public String OutputFile {get; set;} = null;
-	};
 	
 	static void Main(String[] args)
 	{
@@ -118,22 +116,17 @@ class Program
 			beatmap.WriteTo(outputFileStream, defaultCompression);
 		}
 		// not good
-		catch (Exception e)
+		catch (Exception e) when
+		(
+			e is IOException ||
+			e is InvalidCastException ||
+			e is InvalidBeatmapFileException
+		)
 		{
 			Console.Error.WriteLine(e.ToString());
-
-			if (
-				e is IOException ||
-				e is InvalidCastException ||
-				e is InvalidBeatmapFileException
-			)
-				Environment.Exit(1);
-			else
-				// oh okay
-				throw;
+			Environment.Exit(1);
 		}
 	}
 };
 
-}
 }

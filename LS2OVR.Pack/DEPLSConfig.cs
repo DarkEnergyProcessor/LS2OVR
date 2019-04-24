@@ -10,28 +10,25 @@ namespace LS2OVR.Pack
 internal class DEPLSConfig
 {
 	internal static Dictionary<String, YamlScalarNode> KeyMapping = new Dictionary<String, YamlScalarNode>();
-	public static YamlScalarNode Key(String k)
-	{
-		try
-		{
-			return KeyMapping[k];
-		}
-		catch (KeyNotFoundException)
-		{
-			return KeyMapping[k] = new YamlScalarNode(k);
-		}
-	}
 
 	internal static String GetYamlValue(YamlMappingNode map, String key)
 	{
 		try
 		{
-			return ((YamlScalarNode) map.Children[Key(key)]).Value;
+			return ((YamlScalarNode) map.Children[key]).Value;
 		}
 		catch (Exception e) when (e is InvalidCastException || e is KeyNotFoundException)
 		{
 			return null;
 		}
+	}
+
+	internal static Int32 TryGetYamlIntValue(YamlMappingNode map, String key, Int32 defaultValue = 0)
+	{
+		if (map.Children.TryGetValue(key, out YamlNode a) && a is YamlSequenceNode b && Int32.TryParse(b.ToString(), out Int32 c))
+			return c;
+		else
+			return defaultValue;
 	}
 
 	/// <summary>
@@ -47,7 +44,7 @@ internal class DEPLSConfig
 			throw new ArgumentNullException("document");
 
 		YamlMappingNode map = (YamlMappingNode) document.RootNode;
-		String songTitle = ((YamlScalarNode) map[Key("title")]).Value;
+		String songTitle = ((YamlScalarNode) map["title"]).Value;
 
 		Metadata metadata = new Metadata(songTitle)
 		{
@@ -57,7 +54,7 @@ internal class DEPLSConfig
 			Artwork = GetYamlValue(map, "artwork")
 		};
 
-		if (map.Children.TryGetValue(Key("composers"), out YamlNode composers) && composers is YamlSequenceNode composerList)
+		if (map.Children.TryGetValue("composers", out YamlNode composers) && composers is YamlSequenceNode composerList)
 		{
 			try
 			{
@@ -105,24 +102,26 @@ internal class DEPLSConfig
 		
 		List<BeatmapData> beatmapDataList = new List<BeatmapData>();
 		YamlMappingNode map = (YamlMappingNode) document.RootNode;
-		YamlSequenceNode beatmapList = (YamlSequenceNode) map[Key("beatmaps")];
+		YamlSequenceNode beatmapList = (YamlSequenceNode) map["beatmaps"];
 
 		foreach (YamlMappingNode beatmap in beatmapList)
 		{
 			BeatmapData beatmapData = new BeatmapData()
 			{
-				Star = Byte.Parse(((YamlScalarNode) beatmap[Key("star")]).Value),
-				StarRandom = Byte.Parse(((YamlScalarNode) beatmap[Key("star-random")]).Value),
+				Star = Byte.Parse(((YamlScalarNode) beatmap["star"]).Value),
+				StarRandom = Byte.Parse(((YamlScalarNode) beatmap["star-random"]).Value),
 				DifficultyName = GetYamlValue(beatmap, "difficulty-name"),
 				Background = TryGetBackground(beatmap, "background"),
 				ScoreInfo = TryGetIntArrayInfo(beatmap, "score-rank"),
-				ComboInfo = TryGetIntArrayInfo(beatmap, "combo-rank")
+				ComboInfo = TryGetIntArrayInfo(beatmap, "combo-rank"),
+				BaseScorePerTap = TryGetYamlIntValue(beatmap, "score-per-tap"),
+				InitialStamina = (Int16) TryGetYamlIntValue(beatmap, "stamina")
 			};
 
 			if (beatmapData.Background != null)
 				beatmapData.BackgroundRandom = TryGetBackground(beatmap, "background-random") ?? beatmapData.Background;
 			
-			if (beatmap.Children.TryGetValue(Key("custom-unit-list"), out YamlNode customUnit))
+			if (beatmap.Children.TryGetValue("custom-unit-list", out YamlNode customUnit))
 			{
 				if (customUnit is YamlSequenceNode customUnitList)
 				{
@@ -134,12 +133,12 @@ internal class DEPLSConfig
 						{
 							if (
 								// Position field
-								customUnitInfo.Children.TryGetValue(Key("position"), out YamlNode positionNode) &&
+								customUnitInfo.Children.TryGetValue("position", out YamlNode positionNode) &&
 								positionNode is YamlScalarNode positionScalarNode &&
 								Byte.TryParse(positionScalarNode.Value, out Byte position) &&
 								position > 0 && position <= 9 &&
 								// Unit filename field
-								customUnitInfo.Children.TryGetValue(Key("unit-filename"), out YamlNode unitFilenameNode) &&
+								customUnitInfo.Children.TryGetValue("unit-filename", out YamlNode unitFilenameNode) &&
 								unitFilenameNode is YamlScalarNode unitFilename
 							)
 								customUnitInfos.Add(new CustomUnitInfo(position, unitFilename.Value));
@@ -166,7 +165,7 @@ internal class DEPLSConfig
 
 				if (i > 0)
 				{
-					if (Math.Abs(sifBeatmapData[i - 1].timing_sec - sifBeatmapData[i].timing_sec) < 0.001)
+					if (Math.Abs(sifBeatmapData[i - 1].timing_sec - sifBeatmapData[i].timing_sec) <= 0.001)
 					{
 						BeatmapTimingMap prev = beatmapDatas[i - 1];
 						prev.SimultaneousNote = true;
@@ -198,7 +197,7 @@ internal class DEPLSConfig
 		
 		Dictionary<String, Byte[]> fileList = new Dictionary<String, Byte[]>();
 		YamlMappingNode map = (YamlMappingNode) document.RootNode;
-		YamlSequenceNode additionalFileList = (YamlSequenceNode) map[Key("additional-files")];
+		YamlSequenceNode additionalFileList = (YamlSequenceNode) map["additional-files"];
 
 		foreach (YamlNode file in additionalFileList)
 		{
@@ -216,7 +215,7 @@ internal class DEPLSConfig
 
 	internal static BackgroundInfo? TryGetBackground(YamlMappingNode map, String key)
 	{
-		if (map.Children.TryGetValue(Key(key), out YamlNode background))
+		if (map.Children.TryGetValue(key, out YamlNode background))
 		{
 			if (background is YamlScalarNode)
 			{
@@ -240,7 +239,7 @@ internal class DEPLSConfig
 			{
 				String main;
 
-				if (bg.Children.TryGetValue(Key("main"), out YamlNode temp) && temp is YamlScalarNode mainBg)
+				if (bg.Children.TryGetValue("main", out YamlNode temp) && temp is YamlScalarNode mainBg)
 					main = mainBg.Value;
 				else
 					return null;
@@ -260,7 +259,7 @@ internal class DEPLSConfig
 
 	internal static Int32[] TryGetIntArrayInfo(YamlMappingNode map, String key)
 	{
-		if (map.Children.TryGetValue(Key(key), out YamlNode temp) && temp is YamlSequenceNode info && info.Children.Count >= 4)
+		if (map.Children.TryGetValue(key, out YamlNode temp) && temp is YamlSequenceNode info && info.Children.Count >= 4)
 		{
 			Int32[] arrayData = new Int32[4];
 

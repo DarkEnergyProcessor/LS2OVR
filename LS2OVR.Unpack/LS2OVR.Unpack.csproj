@@ -5,7 +5,7 @@
     <TargetFramework>netcoreapp2.0</TargetFramework>
     <Version>0.1</Version>
     <Authors>Dark Energy Processor Corporation</Authors>
-    <Description>Pack DEPLS project to LS2OVR beatmap file.</Description>
+    <Description>Unpack LS2OVR to DEPLS project.</Description>
     <Copyright>Copyright (c) 2040 Dark Energy Processor</Copyright>
     <PackageLicenseUrl>https://www.zlib.net/zlib_license.html</PackageLicenseUrl>
     <PackageProjectUrl>https://github.com/MikuAuahDark/LS2OVR</PackageProjectUrl>

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using CommandLine;
@@ -200,6 +201,20 @@ class Program
 					Console.Error.WriteLine("No beatmap #{0}", options.BeatmapIndex);
 					Console.Error.WriteLine();
 				}
+			}
+
+			if (options.ShowFiles)
+			{
+				Console.WriteLine("Files embedded");
+				Console.WriteLine("--------------");
+				UInt32 i = 0;
+				foreach (KeyValuePair<String, Byte[]> files in beatmap.FileDatabase)
+				{
+					Console.WriteLine("File #{0}", ++i);
+					Console.WriteLine("  Filename: {0}", files.Key);
+					Console.WriteLine("  Size: {0} Bytes", files.Value.Length);
+				}
+				Console.WriteLine();
 			}
 		}
 		catch (Exception e) when (e is IOException || e is InvalidBeatmapFileException)
