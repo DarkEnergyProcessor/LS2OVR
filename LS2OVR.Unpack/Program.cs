@@ -113,11 +113,23 @@ class Program
 		try
 		{
 			FileStream inputFile = new FileStream(options.InputFile, FileMode.Open, FileAccess.Read, FileShare.Read);
-			Beatmap beatmap = new Beatmap(inputFile);
+			MemoryStream inputData = new MemoryStream();
+			Beatmap beatmap = null;
+			Byte[] signatureTest = new Byte[8];
 			String outputDir = options.OutputDir.TrimEnd('/').TrimEnd('\\');
 			
 			if (options.CreateDirectory)
 				Directory.CreateDirectory(outputDir);
+
+			// Differentiate between LS2 and LS2OVR beatmap
+			inputFile.CopyTo(inputData);
+			inputData.Seek(0, SeekOrigin.Begin);
+			inputData.Read(signatureTest, 0, 8);
+			inputData.Seek(0, SeekOrigin.Begin);
+			if (LS2.Util.ByteArrayEquals(LS2.LS2Beatmap.LS2Signature, signatureTest))
+				beatmap = LS2.LS2Beatmap.LS2ToLS2OVR(inputData);
+			else
+				beatmap = new Beatmap(inputData);
 			
 			// Write metadata
 			Metadata beatmapMetadata = beatmap.BeatmapMetadata;
