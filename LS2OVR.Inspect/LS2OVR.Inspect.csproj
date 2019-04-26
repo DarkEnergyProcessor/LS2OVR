@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>netcoreapp2.0</TargetFramework>
+    <TargetFrameworks>netcoreapp2.0;net40</TargetFrameworks>
     <Version>0.1</Version>
     <Description>Shows information about LS2OVR beatmap file.</Description>
     <RepositoryUrl>https://github.com/MikuAuahDark/LS2OVR</RepositoryUrl>
@@ -13,7 +13,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="CommandLineParser" Version="2.4.3" />
+    <PackageReference Include="CommandLineParser" Version="2.3.0" Condition="'$(TargetFramework)' != 'netcoreapp2.0'" />
+    <PackageReference Include="CommandLineParser" Version="2.4.3" Condition="'$(TargetFramework)' == 'netcoreapp2.0'" />
   </ItemGroup>
 
   <ItemGroup>

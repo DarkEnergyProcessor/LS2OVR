@@ -103,8 +103,6 @@ internal class BMPMSection: LS2Section
 	{
 		if (ppqn > 0 || bpm > 0)
 			throw new NotImplementedException("BMPT is currently not implemented");
-		if (v2 == false)
-			throw new NotImplementedException("TODO v1 BMPM parsing");
 		
 		List<BeatmapTimingMap> map = new List<BeatmapTimingMap>();
 		UInt32 count = Util.ReadUInt32LE(reader);
@@ -117,46 +115,76 @@ internal class BMPMSection: LS2Section
 
 			if (attribute == 0xFFFFFFFF)
 				throw new NotImplementedException("BMPT is currently not implemented");
-
-			BeatmapTimingMap p = new BeatmapTimingMap() {
+			
+			BeatmapTimingMap p = new BeatmapTimingMap()
+			{
 				Time = ((Double) timingMsec) * 0.001,
 				Attribute = (Byte) (attribute & 0x0F),
 				Position = (Byte) (effect & 15),
+				NoteType = NoteMapType.NormalNote,
 				Length = 0,
 				NoteGroup = 0,
-				SwingNote = (attribute & 0x10) > 0
 			};
-
+			
 			if (p.Attribute == 15)
 			{
 				p.RedColor = (Single) (((Double) ((attribute >> 23) & 0x1FF)) / 511.0);
 				p.GreenColor = (Single) (((Double) ((attribute >> 14) & 0x1FF)) / 511.0);
 				p.BlueColor = (Single) (((Double) ((attribute >> 5) & 0x1FF)) / 511.0);
 			}
-
-			switch ((effect >> 4) & 0x03)
+			
+			if (v2)
 			{
-				case 0:
+				p.SwingNote = (attribute & 0x10) > 0;
+
+				switch ((effect >> 4) & 0x03)
 				{
-					p.NoteType = NoteMapType.NormalNote;
-					break;
+					case 0:
+					{
+						p.NoteType = NoteMapType.NormalNote;
+						break;
+					}
+					case 1:
+					{
+						p.NoteType = NoteMapType.TokenNote;
+						break;
+					}
+					case 2:
+					{
+						p.NoteType = NoteMapType.LongNote;
+						p.Length = ((Double) ((effect >> 6) & 0x3FFFF)) * 0.001;
+						break;
+					}
+					case 3:
+					{
+						p.NoteType = NoteMapType.StarNote;
+						p.SwingNote = false;
+						break;
+					}
 				}
-				case 1:
+			}
+			else
+			{
+				if ((effect >> 31) > 0)
 				{
-					p.NoteType = NoteMapType.TokenNote;
-					break;
-				}
-				case 2:
-				{
+					// Long note
+					p.Length = ((Double) ((effect & 0x3FFFFFF0) >> 4)) * 0.001;
 					p.NoteType = NoteMapType.LongNote;
-					p.Length = ((Double) ((effect >> 6) & 0x3FFFF)) * 0.001;
-					break;
 				}
-				case 3:
+				else
 				{
-					p.NoteType = NoteMapType.StarNote;
-					p.SwingNote = false;
-					break;
+					Boolean isToken = (effect & 0x10) > 0;
+					Boolean isStar = (effect & 0x20) > 0;
+
+					if (isToken && isStar == false)
+						p.NoteType = NoteMapType.TokenNote;
+					else if (isToken == false && isStar)
+						p.NoteType = NoteMapType.StarNote;
+					else if (isToken && isStar)
+					{
+						p.SwingNote = true;
+						p.NoteGroup = 2; // Uh, unknown
+					}
 				}
 			}
 

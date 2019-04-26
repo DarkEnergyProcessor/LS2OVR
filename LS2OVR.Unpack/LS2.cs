@@ -151,7 +151,11 @@ internal class LS2Beatmap
 			if (metadata.StarRandom > 0)
 				beatmapData.StarRandom = metadata.StarRandom;
 		}
-		catch (Exception e) when (e is NullReferenceException || e is IndexOutOfRangeException)
+		catch (Exception e) when (
+			e is NullReferenceException ||
+			e is IndexOutOfRangeException ||
+			e is ArgumentOutOfRangeException
+		)
 		{
 			if (isV2)
 				throw new InvalidBeatmapFileException("missing MTDT section");
@@ -210,7 +214,123 @@ internal class LS2Beatmap
 			fileList.Add(audioFilename, audio.Data);
 		}
 
-		// TODO: Background, units, and LCLR
+		// Background
+		List<LS2Section> backgrounds = FindSection(sectionList, BIMGFourCC);
+		if (backgrounds.Count > 0)
+		{
+			UIMGSection main = null, left = null, right = null, top = null, bottom = null;
+
+			foreach (UIMGSection bg in backgrounds)
+			{
+				if (bg.Index == 0 && main == null)
+					main = bg;
+				else if (bg.Index == 1 && left == null)
+					left = bg;
+				else if (bg.Index == 2 && right == null)
+					right = bg;
+				else if (bg.Index == 3 && top == null)
+					top = bg;
+				else if (bg.Index == 4 && bottom == null)
+					bottom = bg;
+			}
+
+			if (main != null)
+			{
+				// Main background
+				String bgFileName = "background-0.png";
+				while (fileList.ContainsKey(bgFileName))
+					bgFileName = "background-0-" + Program.RandomString(5) + ".png";
+				
+				BackgroundInfo bg = new BackgroundInfo(bgFileName);
+				fileList.Add(bgFileName, main.ImageData);
+
+				// Left & right
+				if (left != null && right != null)
+				{
+					// Left background
+					bgFileName = "background-1.png";
+					while (fileList.ContainsKey(bgFileName))
+						bgFileName = "background-1-" + Program.RandomString(5) + ".png";
+					
+					bg.Left = bgFileName;
+					fileList.Add(bgFileName, left.ImageData);
+
+					// Right background
+					bgFileName = "background-2.png";
+					while (fileList.ContainsKey(bgFileName))
+						bgFileName = "background-2-" + Program.RandomString(5) + ".png";
+					
+					bg.Right = bgFileName;
+					fileList.Add(bgFileName, right.ImageData);
+				}
+
+				// Top & bottom
+				if (top != null && bottom != null)
+				{
+					// Left background
+					bgFileName = "background-3.png";
+					while (fileList.ContainsKey(bgFileName))
+						bgFileName = "background-3-" + Program.RandomString(5) + ".png";
+					
+					bg.Top = bgFileName;
+					fileList.Add(bgFileName, top.ImageData);
+
+					// Right background
+					bgFileName = "background-4.png";
+					while (fileList.ContainsKey(bgFileName))
+						bgFileName = "background-4-" + Program.RandomString(5) + ".png";
+					
+					bg.Bottom = bgFileName;
+					fileList.Add(bgFileName, bottom.ImageData);
+				}
+
+				// Add
+				beatmapData.Background = beatmapData.BackgroundRandom = bg;
+			}
+		}
+		
+		// LCLR
+		List<LS2Section> lclrList = FindSection(sectionList, LCLRFourCC);
+		if (lclrList.Count > 0)
+		{
+			ADIOSection lclr = lclrList[0] as ADIOSection;
+			fileList.Add("live_clear." + lclr.Extension, lclr.Data);
+		}
+
+		// Units
+		List<LS2Section> unitList = FindSection(sectionList, UNITSection.FourCC);
+		if (unitList.Count > 0)
+		{
+			List<LS2Section> uimgList = FindSection(sectionList, UIMGSection.FourCC);
+			Dictionary<Byte, KeyValuePair<String, Byte[]>> uimgDataIndex = new Dictionary<Byte, KeyValuePair<String, Byte[]>>();
+
+			foreach (LS2Section uimgS in uimgList)
+			{
+				UIMGSection uimg = uimgS as UIMGSection;
+				String unitFilename = $"unit_id_{uimg.Index}.png";
+				while (fileList.ContainsKey(unitFilename))
+					unitFilename = $"unit_id_{uimg.Index}" + Program.RandomString(5) + ".png";
+				
+				uimgDataIndex[uimg.Index] = new KeyValuePair<String, Byte[]>(unitFilename, uimg.ImageData);
+			}
+
+			List<CustomUnitInfo> customUnits = new List<CustomUnitInfo>();
+
+			foreach (KeyValuePair<Byte, Byte> unit in (unitList[0] as UNITSection).Definition)
+			{
+				if (uimgDataIndex.TryGetValue(unit.Value, out KeyValuePair<String, Byte[]> v))
+				{
+					customUnits.Add(new CustomUnitInfo() {
+						Position = unit.Key,
+						Filename = v.Key
+					});
+					fileList.Add(v.Key, v.Value);
+				}
+			}
+
+			if (customUnits.Count > 0)
+				beatmapData.CustomUnitList = customUnits;
+		}
 
 		Beatmap beatmap = new Beatmap(beatmapMetadata)
 		{

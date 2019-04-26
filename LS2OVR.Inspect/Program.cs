@@ -43,7 +43,7 @@ class Program
 		Console.WriteLine("Artwork File: {0}", metadata.Artwork ?? "(none)");
 
 		if (metadata.Tags != null && metadata.Tags.Length > 0)
-			Console.WriteLine("Beatmap Tags: {0}", String.Join(' ', metadata.Tags));
+			Console.WriteLine("Beatmap Tags: {0}", String.Join(" ", metadata.Tags));
 		else
 			Console.WriteLine("Beatmap Tags: (none)");
 	}

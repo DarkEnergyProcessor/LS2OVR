@@ -419,7 +419,7 @@ public class Beatmap
 			case BeatmapCompressionType.GZip:
 			{
 				MemoryStream compressorStream = new MemoryStream();
-				GZipStream compressor = new GZipStream(compressorStream, CompressionLevel.Optimal, true);
+				GZipStream compressor = new GZipStream(compressorStream, CompressionMode.Compress, true);
 				compressor.Write(beatmapDataBuffer, 0, beatmapDataBuffer.Length);
 				compressor.Close();
 				Byte[] compressedData = compressorStream.ToArray();

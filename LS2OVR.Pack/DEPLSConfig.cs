@@ -80,7 +80,7 @@ internal class DEPLSConfig
 
 		String tags = GetYamlValue(map, "tags");
 		if (tags != null && tags.Equals(String.Empty) == false)
-			metadata.Tags = tags.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+			metadata.Tags = tags.Split(new Char[] {' '}, StringSplitOptions.RemoveEmptyEntries);
 		
 		return metadata;
 	}

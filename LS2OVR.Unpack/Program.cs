@@ -163,7 +163,7 @@ class Program
 				rootNode.Add("artwork", beatmapMetadata.Artwork);
 			}
 			if (beatmapMetadata.Tags != null && beatmapMetadata.Tags.Length > 0)
-				rootNode.Add("tags", String.Join(' ', beatmapMetadata.Tags));
+				rootNode.Add("tags", String.Join(" ", beatmapMetadata.Tags));
 			
 			YamlSequenceNode beatmapList = new YamlSequenceNode();
 			Int32 beatmapNumber = 1;
