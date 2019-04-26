@@ -1,6 +1,8 @@
 LS2OVR
 ======
 
+[![Build Status](https://travis-ci.com/MikuAuahDark/LS2OVR.svg?branch=master)](https://travis-ci.com/MikuAuahDark/LS2OVR)
+
 C# implementation of [Live Simulator: 2 "Over the Rainbow"](https://github.com/MikuAuahDark/livesim2/blob/over_the_rainbow/docs/ls2ovr_beatmap_format.txt)
 beatmap decoding and encoding. This repository consist of 3 programs and 1 library:
 
