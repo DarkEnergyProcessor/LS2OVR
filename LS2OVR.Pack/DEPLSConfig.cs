@@ -25,7 +25,7 @@ internal class DEPLSConfig
 
 	internal static Int32 TryGetYamlIntValue(YamlMappingNode map, String key, Int32 defaultValue = 0)
 	{
-		if (map.Children.TryGetValue(key, out YamlNode a) && a is YamlSequenceNode b && Int32.TryParse(b.ToString(), out Int32 c))
+		if (map.Children.TryGetValue(key, out YamlNode a) && a is YamlScalarNode b && Int32.TryParse(b.ToString(), out Int32 c))
 			return c;
 		else
 			return defaultValue;
