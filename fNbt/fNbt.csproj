@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;net40</TargetFrameworks>
+    <TargetFramework>netstandard2.0</TargetFramework>
     <Version>0.6.4</Version>
     <Description>A C# library for reading and writing Named Binary Tag (NBT) files and streams.</Description>
     <Company />
